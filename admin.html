@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel - Aurora Podcast</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1e3a5f">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-init.js"></script>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --primary: #1e3a5f;
+      --primary-dark: #0f172a;
+      --secondary: #6366f1;
+      --accent: #8b5cf6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .admin-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .admin-header {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .admin-logo {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--secondary), var(--accent));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+    }
+
+    .logo-text h1 {
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .logo-text p {
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--secondary), var(--accent));
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    .stat-icon.blue { background: #dbeafe; }
+    .stat-icon.green { background: #d1fae5; }
+    .stat-icon.purple { background: #ede9fe; }
+    .stat-icon.orange { background: #ffedd5; }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--secondary);
+    }
+
+    .generated-key {
+      background: linear-gradient(135deg, #dbeafe, #ede9fe);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .generated-key.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .generated-key h3 {
+      color: var(--primary);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .key-code {
+      background: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--secondary);
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .copy-btn {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .key-expiry {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--text-light);
+    }
+
+    .keys-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .keys-table th, .keys-table td {
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .keys-table th {
+      font-size: 12px;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .keys-table td {
+      font-size: 14px;
+    }
+
+    .keys-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-badge.active {
+      background: #d1fae5;
+      color: #059669;
+    }
+
+    .status-badge.expired {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+
+    .action-btn.delete {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .whatsapp-btn {
+      background: #25D366;
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-light);
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      border-radius: 12px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(100px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="admin-container">
+  <div class="admin-header">
+    <div class="admin-logo">
+      <div class="logo-icon">🎙️</div>
+      <div class="logo-text">
+        <h1>Aurora Admin Panel</h1>
+        <p>Manage Access Keys</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="showGenerateModal()">
+        ➕ Generate Key
+      </button>
+      <button class="btn btn-danger" onclick="logout()">
+        🚪 Logout
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon blue">🔑</div>
+      <div class="stat-number" id="totalKeys">0</div>
+      <div class="stat-label">Total Keys Generated</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">✅</div>
+      <div class="stat-number" id="activeKeys">0</div>
+      <div class="stat-label">Active Keys</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple">👥</div>
+      <div class="stat-number" id="totalUsers">0</div>
+      <div class="stat-label">Registered Users</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">📱</div>
+      <div class="stat-number" id="appLogins">0</div>
+      <div class="stat-label">App Logins Today</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Generate New Key</h2>
+      </div>
+      
+      <div class="form-group">
+        <label>Key Name / User</label>
+        <input type="text" id="keyName" placeholder="Enter user name or description">
+      </div>
+      
+      <div class="form-group">
+        <label>Valid For</label>
+        <select id="keyExpiry">
+          <option value="1">1 Hour</option>
+          <option value="2">2 Hours</option>
+          <option value="4">4 Hours</option>
+          <option value="8">8 Hours</option>
+          <option value="24">24 Hours</option>
+          <option value="48">2 Days</option>
+          <option value="168">1 Week</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Max Uses (0 = unlimited)</label>
+        <input type="number" id="maxUses" value="1" min="0">
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%;" onclick="generateKey()">
+        🔑 Generate Access Key
+      </button>
+
+      <div class="generated-key" id="generatedKey">
+        <h3>🎉 Key Generated Successfully!</h3>
+        <div class="key-code">
+          <span id="newKeyCode">AURORA-XXXX</span>
+          <button class="copy-btn" onclick="copyKey()">Copy</button>
+        </div>
+        <p class="key-expiry" id="keyExpiryText">Expires in: 1 hour</p>
+        <a href="https://wa.me/916305321043" target="_blank" class="whatsapp-btn" style="margin-top: 12px;">
+          📱 Send via WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Recent Keys</h2>
+        <button class="btn btn-primary" style="padding: 8px 16px;" onclick="loadKeys()">🔄 Refresh</button>
+      </div>
+      
+      <div style="overflow-x: auto;">
+        <table class="keys-table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>User</th>
+              <th>Expires</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="keysTable">
+            <tr>
+              <td colspan="5" class="empty-state">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Podcast Management -->
+    <div class="card" style="margin-top: 24px;">
+      <div class="card-header">
+        <h2 class="card-title">🎙️ Manage Podcasts</h2>
+        <button class="btn btn-primary" style="padding: 8px 16px;" onclick="showAddPodcastModal()">+ Add Podcast</button>
+      </div>
+      
+      <div id="podcastsList">
+        <div class="loading-podcasts">Loading podcasts...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Generate Modal -->
+<div id="generateModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+  <div style="background: white; border-radius: 20px; padding: 30px; max-width: 400px; width: 90%;">
+    <h2 style="margin-bottom: 20px; color: var(--primary);">Generate Key</h2>
+    <div class="form-group">
+      <label>User Name</label>
+      <input type="text" id="modalKeyName" placeholder="Enter name">
+    </div>
+    <div class="form-group">
+      <label>Valid For</label>
+      <select id="modalKeyExpiry">
+        <option value="1">1 Hour</option>
+        <option value="2">2 Hours</option>
+        <option value="4">4 Hours</option>
+        <option value="24">24 Hours</option>
+      </select>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-primary" style="flex: 1;" onclick="generateKeyFromModal()">Generate</button>
+      <button class="btn" style="background: #e2e8f0;" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Podcast Modal -->
+<div id="podcastModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; overflow-y: auto;">
+  <div style="background: white; border-radius: 20px; padding: 30px; max-width: 500px; width: 90%; margin: 20px;">
+    <h2 style="margin-bottom: 20px; color: var(--primary);">🎙️ Add New Podcast</h2>
+    <div class="form-group">
+      <label>Title *</label>
+      <input type="text" id="podcastTitle" placeholder="e.g., Mid-Term Results Announcement">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="podcastDesc" placeholder="Brief description" rows="2"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Source *</label>
+      <input type="text" id="podcastSource" placeholder="e.g., Admin Office, Exam Cell">
+    </div>
+    <div class="form-group">
+      <label>Category *</label>
+      <select id="podcastCategory">
+        <option value="new">📢 New</option>
+        <option value="academic">📚 Academic</option>
+        <option value="events">🎉 Events</option>
+        <option value="career">💼 Career</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Icon</label>
+      <select id="podcastIcon">
+        <option value="📢">📢 Announcement</option>
+        <option value="📋">📋 Notice</option>
+        <option value="💼">💼 Career</option>
+        <option value="📚">📚 Academic</option>
+        <option value="🎉">🎉 Event</option>
+        <option value="🎙️">🎙️ Podcast</option>
+        <option value="📖">📖 Study</option>
+        <option value="🏆">🏆 Achievement</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Audio File URL</label>
+      <input type="text" id="podcastAudio" placeholder="URL to audio file (mp3)">
+    </div>
+    <div class="form-group">
+      <label>Time Display</label>
+      <input type="text" id="podcastTime" placeholder="e.g., 5 min ago, 1 day ago">
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <button class="btn btn-primary" style="flex: 1;" onclick="savePodcast()">💾 Save Podcast</button>
+      <button class="btn" style="background: #e2e8f0; flex: 1;" onclick="closePodcastModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ADMIN_EMAIL = "admin@aurora.edu.in";
+  const ADMIN_PASSWORD = "AuroraAdmin@2026"; // Change this!
+
+  // Check if admin logged in
+  let currentUser = null;
+  
+  // Initialize
+  window.onload = function() {
+    checkAdmin();
+  };
+
+  function checkAdmin() {
+    const adminLogin = localStorage.getItem('aurora_admin');
+    if (!adminLogin) {
+      showLoginPrompt();
+    } else {
+      loadStats();
+      loadKeys();
+    }
+  }
+
+  function showLoginPrompt() {
+    const email = prompt("Enter admin email:");
+    const password = prompt("Enter admin password:");
+    
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      localStorage.setItem('aurora_admin', 'true');
+      loadStats();
+      loadKeys();
+    } else if (email) {
+      alert("Invalid credentials!");
+      showLoginPrompt();
+    }
+  }
+
+  function logout() {
+    if (confirm('Logout from admin panel?')) {
+      localStorage.removeItem('aurora_admin');
+      location.reload();
+    }
+  }
+
+  // Generate Key
+  function generateKey() {
+    const name = document.getElementById('keyName').value.trim() || 'User';
+    const hours = parseInt(document.getElementById('keyExpiry').value);
+    const maxUses = parseInt(document.getElementById('maxUses').value);
+
+    const key = 'AURORA-' + generateRandomKey(6);
+    const expiry = Date.now() + (hours * 60 * 60 * 1000);
+
+    const keyData = {
+      key: key,
+      name: name,
+      createdAt: Date.now(),
+      expiry: expiry,
+      maxUses: maxUses,
+      uses: 0,
+      active: true,
+      deviceId: null,
+      singleDevice: true
+    };
+
+    // Store in localStorage
+    const keys = JSON.parse(localStorage.getItem('aurora_keys') || '[]');
+    keys.unshift(keyData);
+    localStorage.setItem('aurora_keys', JSON.stringify(keys));
+
+    // Also try to store in Firebase
+    try {
+      if (typeof db !== 'undefined' && db) {
+        db.ref('keys').push(keyData);
+        showToast('Key generated and saved to Firebase!', 'success');
+      } else {
+        showToast('Key generated (Firebase not connected)', 'success');
+      }
+    } catch(e) {
+      showToast('Key generated (saved locally)', 'success');
+    }
+
+    // Show generated key
+    document.getElementById('newKeyCode').textContent = key;
+    document.getElementById('keyExpiryText').textContent = `Expires in: ${hours} hour(s) | One device only`;
+    document.getElementById('generatedKey').classList.add('show');
+
+    loadStats();
+    loadKeys();
+
+    // Clear form
+    document.getElementById('keyName').value = '';
+    document.getElementById('maxUses').value = '1';
+  }
+
+  function generateRandomKey(length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  function copyKey() {
+    const key = document.getElementById('newKeyCode').textContent;
+    navigator.clipboard.writeText(key);
+    showToast('Key copied to clipboard!', 'success');
+  }
+
+  // Load Keys
+  function loadKeys() {
+    const keys = JSON.parse(localStorage.getItem('aurora_keys') || '[]');
+    const tbody = document.getElementById('keysTable');
+    
+    if (keys.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No keys generated yet</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = keys.map(k => {
+      const isExpired = Date.now() > k.expiry;
+      const isActive = k.active && !isExpired && (k.maxUses === 0 || k.uses < k.maxUses);
+      
+      const timeLeft = isExpired ? 'Expired' : getTimeRemaining(k.expiry);
+      
+      return `
+        <tr>
+          <td style="font-weight: 600; color: var(--secondary);">${k.key}</td>
+          <td>${k.name}</td>
+          <td>${timeLeft}</td>
+          <td><span class="status-badge ${isActive ? 'active' : 'expired'}">${isActive ? 'Active' : 'Expired'}</span></td>
+          <td>
+            <button class="action-btn delete" onclick="deleteKey('${k.key}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function deleteKey(key) {
+    if (confirm('Delete this key?')) {
+      let keys = JSON.parse(localStorage.getItem('aurora_keys') || '[]');
+      keys = keys.filter(k => k.key !== key);
+      localStorage.setItem('aurora_keys', JSON.stringify(keys));
+      
+      showToast('Key deleted', 'success');
+      loadStats();
+      loadKeys();
+    }
+  }
+
+  function getTimeRemaining(expiry) {
+    const diff = expiry - Date.now();
+    if (diff < 0) return 'Expired';
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  }
+
+  // Stats
+  function loadStats() {
+    const keys = JSON.parse(localStorage.getItem('aurora_keys') || '[]');
+    const now = Date.now();
+    
+    const totalKeys = keys.length;
+    const activeKeys = keys.filter(k => k.active && k.expiry > now).length;
+    
+    document.getElementById('totalKeys').textContent = totalKeys;
+    document.getElementById('activeKeys').textContent = activeKeys;
+    document.getElementById('totalUsers').textContent = totalKeys;
+    document.getElementById('appLogins').textContent = activeKeys;
+  }
+
+  // Modal functions
+  function showGenerateModal() {
+    document.getElementById('generateModal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('generateModal').style.display = 'none';
+  }
+
+  function generateKeyFromModal() {
+    const name = document.getElementById('modalKeyName').value.trim() || 'User';
+    const hours = parseInt(document.getElementById('modalKeyExpiry').value);
+    
+    document.getElementById('keyName').value = name;
+    document.getElementById('keyExpiry').value = hours;
+    
+    closeModal();
+    generateKey();
+  }
+
+  // Toast notification
+  function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  // ==================== PODCAST MANAGEMENT ====================
+  
+  function showAddPodcastModal() {
+    document.getElementById('podcastModal').style.display = 'flex';
+  }
+
+  function closePodcastModal() {
+    document.getElementById('podcastModal').style.display = 'none';
+  }
+
+  function savePodcast() {
+    const title = document.getElementById('podcastTitle').value.trim();
+    const source = document.getElementById('podcastSource').value.trim();
+    const category = document.getElementById('podcastCategory').value;
+    const icon = document.getElementById('podcastIcon').value;
+    const audio = document.getElementById('podcastAudio').value.trim();
+    const desc = document.getElementById('podcastDesc').value.trim();
+    const time = document.getElementById('podcastTime').value.trim() || 'Just now';
+
+    if (!title || !source) {
+      showToast('Please fill in required fields (Title and Source)', 'error');
+      return;
+    }
+
+    const podcast = {
+      title: title,
+      description: desc,
+      source: source,
+      category: category,
+      icon: icon,
+      audio: audio || 'upcoming.mp3',
+      time: time,
+      createdAt: Date.now()
+    };
+
+    // Save to localStorage (for demo/fallback)
+    const podcasts = JSON.parse(localStorage.getItem('aurora_podcasts') || '[]');
+    podcasts.push(podcast);
+    localStorage.setItem('aurora_podcasts', JSON.stringify(podcasts));
+
+    // Save to Firebase Firestore
+    if (typeof FirebaseService !== 'undefined') {
+      FirebaseService.addEpisode({
+        title: title,
+        description: desc,
+        source: source,
+        category: category,
+        file: audio || 'upcoming.mp3',
+        duration: time,
+        date: new Date().toISOString().split('T')[0]
+      }).then(function(success) {
+        if (success) {
+          showToast('Podcast saved to Firebase!', 'success');
+        } else {
+          showToast('Podcast saved locally', 'success');
+        }
+      });
+    } else {
+      showToast('Podcast saved locally', 'success');
+    }
+
+    // Clear form and close
+    document.getElementById('podcastTitle').value = '';
+    document.getElementById('podcastDesc').value = '';
+    document.getElementById('podcastSource').value = '';
+    document.getElementById('podcastAudio').value = '';
+    document.getElementById('podcastTime').value = '';
+    closePodcastModal();
+    loadPodcasts();
+  }
+
+  function loadPodcasts() {
+    const container = document.getElementById('podcastsList');
+    
+    // Try Firebase Firestore
+    if (typeof FirebaseService !== 'undefined') {
+      FirebaseService.getEpisodes().then(function(podcasts) {
+        renderPodcastsList(podcasts);
+      }).catch(function(e) {
+        console.log('Firebase error:', e);
+        const podcasts = JSON.parse(localStorage.getItem('aurora_podcasts') || '[]');
+        renderPodcastsList(podcasts);
+      });
+    } else {
+      // Fallback to localStorage
+      const podcasts = JSON.parse(localStorage.getItem('aurora_podcasts') || '[]');
+      renderPodcastsList(podcasts);
+    }
+  }
+
+  function renderPodcastsList(podcasts) {
+    const container = document.getElementById('podcastsList');
+    
+    if (podcasts.length === 0) {
+      container.innerHTML = '<div class="empty-state">No podcasts yet. Click "Add Podcast" to create one.</div>';
+      return;
+    }
+
+    container.innerHTML = podcasts.map(p => `
+      <div class="episode-item" style="background: var(--bg); margin-bottom: 10px; border-radius: 12px; padding: 12px;">
+        <div style="font-size: 28px;">${p.icon || '🎙️'}</div>
+        <div style="flex: 1;">
+          <h4 style="margin: 0; font-size: 14px;">${p.title}</h4>
+          <p style="margin: 4px 0 0; font-size: 12px; color: var(--text-light);">${p.source} • ${p.time}</p>
+          <span style="font-size: 10px; background: var(--secondary); color: white; padding: 2px 8px; border-radius: 10px;">${p.category}</span>
+        </div>
+        <button onclick="deletePodcast('${p.id}')" style="background: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer;">🗑️</button>
+      </div>
+    `).join('');
+  }
+
+  function deletePodcast(id) {
+    if (!confirm('Are you sure you want to delete this podcast?')) return;
+    
+    // Delete from Firebase Firestore
+    if (typeof FirebaseService !== 'undefined') {
+      FirebaseService.deleteDocument('episodes', id);
+    }
+    
+    // Remove from localStorage
+    let podcasts = JSON.parse(localStorage.getItem('aurora_podcasts') || '[]');
+    podcasts = podcasts.filter((p, i) => String(i) !== String(id));
+    localStorage.setItem('aurora_podcasts', JSON.stringify(podcasts));
+    
+    showToast('Podcast deleted', 'success');
+    loadPodcasts();
+  }
+
+  // Load podcasts on page load
+  loadPodcasts();
+</script>
+
+</body>
+</html>
